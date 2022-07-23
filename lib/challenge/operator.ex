@@ -35,8 +35,18 @@ defmodule Challenge.Operator do
   def create_users(_server, users), do: WalletSupervisor.start_children(users)
 
   @doc """
-  This function places bet for a user
+  This function places bet for a user.
+  The `body` parameter is a map with keys as atoms.
+  The result is a map with keys as atoms.
   """
   @spec bet(server :: GenServer.server(), body :: map) :: map
   def bet(server, body), do: WalletSupervisor.bet(server, body, @registry)
+
+  @doc """
+    This function processes win request made against a bet.
+    The `body` parameter a map with keys as atoms.
+    The result is a map with keys as atoms.
+  """
+  @spec win(server :: GenServer.server(), body :: map) :: map
+  def win(server, body), do: WalletSupervisor.win(server, body, @registry)
 end

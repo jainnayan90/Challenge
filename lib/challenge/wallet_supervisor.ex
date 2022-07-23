@@ -6,6 +6,7 @@ defmodule Challenge.WalletSupervisor do
 
   alias Challenge.Models.Bet
   alias Challenge.Models.User
+  alias Challenge.Models.Win
   alias Challenge.WalletWorker
 
   def start_link(opts \\ []) do
@@ -34,6 +35,25 @@ defmodule Challenge.WalletSupervisor do
          res = get_pid_from_registry(user, registry),
          {:ok, pid} <- get_pid_from_res(res),
          {:ok, res} <- GenServer.call(pid, {:bet, bet}) do
+      res
+    else
+      {:error, :invalid_bet} ->
+        %{status: "RS_ERROR_WRONG_SYNTAX"}
+
+      {:error, :wrong_type} ->
+        %{status: "RS_ERROR_WRONG_TYPES"}
+
+      _ ->
+        %{status: "RS_ERROR_UNKNOWN"}
+    end
+  end
+
+  @spec win(server :: GenServer.server(), body :: map, registry :: atom()) :: map
+  def win(_server, body, registry) do
+    with %Win{user: user} = win <- Win.new(body),
+         res = get_pid_from_registry(user, registry),
+         {:ok, pid} <- get_pid_from_res(res),
+         {:ok, res} <- GenServer.call(pid, {:win, win}) do
       res
     else
       {:error, :invalid_bet} ->
