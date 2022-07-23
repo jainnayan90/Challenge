@@ -34,7 +34,6 @@ defmodule ChallengeTest do
       user_id = "test_user1"
       assert :ok = Challenge.create_users(spid, [user_id])
       [{pid, nil}] = Registry.lookup(@registry, user_id)
-      IO.inspect(pid)
       assert is_pid(pid) == true
 
       assert :ok = Challenge.create_users(spid, [user_id])
@@ -43,7 +42,6 @@ defmodule ChallengeTest do
   end
 
   describe "bet/2 - " do
-
     @bet %{
       user: "john12345",
       transaction_uuid: "16d2dcfe-b89e-11e7-854a-58404eea6d16",
@@ -66,7 +64,9 @@ defmodule ChallengeTest do
       }
     }
 
-    test "places bet successfully for a user if the bet params are valid.", %{supervisor_pid: spid} do
+    test "places bet successfully for a user if the bet params are valid.", %{
+      supervisor_pid: spid
+    } do
       user = "nayan"
       assert :ok = Challenge.create_users(spid, [user])
       [{pid, nil}] = Registry.lookup(@registry, user)
@@ -74,24 +74,21 @@ defmodule ChallengeTest do
 
       request_uuid = "583c985f-fee6-4c0e-bbf5-308aad6265af"
 
-      bet = %{ @bet |
-        user: user,
-        request_uuid: request_uuid
-      }
+      bet = %{@bet | user: user, request_uuid: request_uuid}
 
       assert %{
-        user: ^user,
-        status: "RS_OK",
-        request_uuid: ^request_uuid,
-        currency: "USD",
-        balance: 99_000
-      } = Challenge.bet(spid, bet)
+               user: ^user,
+               status: "RS_OK",
+               request_uuid: ^request_uuid,
+               currency: "USD",
+               balance: 99_000
+             } = Challenge.bet(spid, bet)
     end
 
     test "returns error id user doesnot exists.", %{supervisor_pid: spid} do
       bet = %{@bet | user: "some user"}
 
-      assert %{error: "Bad request"} = Challenge.bet(spid, bet)
+      assert %{status: "RS_ERROR_UNKNOWN"} = Challenge.bet(spid, bet)
     end
 
     test "does not places bet if transaction uuid is duplicate", %{supervisor_pid: spid} do
@@ -100,26 +97,19 @@ defmodule ChallengeTest do
       [{pid, nil}] = Registry.lookup(@registry, user)
       assert is_pid(pid) == true
 
-      bet = %{ @bet |
-        user: user,
-        amount: 3000
-      }
+      bet = %{@bet | user: user, amount: 3000}
 
       assert %{
-        user: ^user,
-        status: "RS_OK",
-        request_uuid: _,
-        currency: "USD",
-        balance: 97_000
-      } = Challenge.bet(spid, bet)
+               user: ^user,
+               status: "RS_OK",
+               request_uuid: _,
+               currency: "USD",
+               balance: 97_000
+             } = Challenge.bet(spid, bet)
 
       assert %{
-        user: ^user,
-        status: "RS_ERROR_DUPLICATE_TRANSACTION",
-        request_uuid: _,
-        currency: "USD",
-        balance: 97_000
-      } = Challenge.bet(spid, bet)
+               status: "RS_ERROR_DUPLICATE_TRANSACTION"
+             } = Challenge.bet(spid, bet)
     end
 
     test "does not places bet if bet amount is negative", %{supervisor_pid: spid} do
@@ -128,18 +118,11 @@ defmodule ChallengeTest do
       [{pid, nil}] = Registry.lookup(@registry, user)
       assert is_pid(pid) == true
 
-      bet = %{ @bet |
-        user: user,
-        amount: -200
-      }
+      bet = %{@bet | user: user, amount: -200}
 
       assert %{
-        user: ^user,
-        status: "RS_ERROR_WRONG_TYPES",
-        request_uuid: _,
-        currency: "USD",
-        balance: 100_000
-      } = Challenge.bet(spid, bet)
+               status: "RS_ERROR_WRONG_TYPES"
+             } = Challenge.bet(spid, bet)
     end
 
     test "does not places bet if bet amount is invalid", %{supervisor_pid: spid} do
@@ -148,18 +131,11 @@ defmodule ChallengeTest do
       [{pid, nil}] = Registry.lookup(@registry, user)
       assert is_pid(pid) == true
 
-      bet = %{ @bet |
-        user: user,
-        amount: 200_000
-      }
+      bet = %{@bet | user: user, amount: 200_000}
 
       assert %{
-        user: ^user,
-        status: "RS_ERROR_NOT_ENOUGH_MONEY",
-        request_uuid: _,
-        currency: "USD",
-        balance: 100_000
-      } = Challenge.bet(spid, bet)
+               status: "RS_ERROR_NOT_ENOUGH_MONEY"
+             } = Challenge.bet(spid, bet)
     end
 
     test "does not places bet if currency code is not USD", %{supervisor_pid: spid} do
@@ -168,19 +144,11 @@ defmodule ChallengeTest do
       [{pid, nil}] = Registry.lookup(@registry, user)
       assert is_pid(pid) == true
 
-      bet = %{ @bet |
-        user: user,
-        amount: 122,
-        currency: "INR"
-      }
+      bet = %{@bet | user: user, amount: 122, currency: "INR"}
 
       assert %{
-        user: ^user,
-        status: "RS_ERROR_WRONG_CURRENCY",
-        request_uuid: _,
-        currency: "USD",
-        balance: 100_000
-      } = Challenge.bet(spid, bet)
+               status: "RS_ERROR_WRONG_CURRENCY"
+             } = Challenge.bet(spid, bet)
     end
 
     test "does not places bet if game code is invalid", %{supervisor_pid: spid} do
@@ -189,19 +157,11 @@ defmodule ChallengeTest do
       [{pid, nil}] = Registry.lookup(@registry, user)
       assert is_pid(pid) == true
 
-      bet = %{ @bet |
-        user: user,
-        amount: 122,
-        game_code: ""
-      }
+      bet = %{@bet | user: user, amount: 122, game_code: ""}
 
       assert %{
-        user: ^user,
-        status: "RS_ERROR_WRONG_TYPES",
-        request_uuid: _,
-        currency: "USD",
-        balance: 100_000
-      } = Challenge.bet(spid, bet)
+               status: "RS_ERROR_WRONG_TYPES"
+             } = Challenge.bet(spid, bet)
     end
 
     test "returns error when payload is incorrect.", %{supervisor_pid: spid} do
@@ -225,12 +185,8 @@ defmodule ChallengeTest do
       }
 
       assert %{
-        user: ^user,
-        status: "RS_ERROR_WRONG_SYNTAX",
-        request_uuid: _,
-        currency: "USD",
-        balance: 100_000
-      } = Challenge.bet(spid, bet)
+               status: "RS_ERROR_WRONG_SYNTAX"
+             } = Challenge.bet(spid, bet)
     end
   end
 end

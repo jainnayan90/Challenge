@@ -4,6 +4,7 @@ defmodule Challenge.WalletSupervisor do
   """
   use DynamicSupervisor
 
+  alias Challenge.Models.Bet
   alias Challenge.Models.User
   alias Challenge.WalletWorker
 
@@ -23,23 +24,27 @@ defmodule Challenge.WalletSupervisor do
       |> get_child_specs()
       |> start_child_process()
     end
+
     :ok
   end
 
   @spec bet(server :: GenServer.server(), body :: map, registry :: atom()) :: map
-  def bet(_server, %{user: user} = body, registry) do
-    with res = get_pid_from_registry(user, registry),
-      {:ok, pid} <- get_pid_from_res(res),
-      {:ok, res} <- GenServer.call(pid, {:bet, body}) do
-        res
+  def bet(_server, body, registry) do
+    with %Bet{user: user} = bet <- Bet.new(body),
+         res = get_pid_from_registry(user, registry),
+         {:ok, pid} <- get_pid_from_res(res),
+         {:ok, res} <- GenServer.call(pid, {:bet, bet}) do
+      res
     else
-      _error ->
-        %{error: "Bad request"}
-    end
-  end
+      {:error, :invalid_bet} ->
+        %{status: "RS_ERROR_WRONG_SYNTAX"}
 
-  def bet(_server, _body, _registry) do
-    %{error: "Bad request"}
+      {:error, :wrong_type} ->
+        %{status: "RS_ERROR_WRONG_TYPES"}
+
+      _ ->
+        %{status: "RS_ERROR_UNKNOWN"}
+    end
   end
 
   defp get_child_specs(user), do: {WalletWorker, User.new(%{id: user})}
@@ -47,9 +52,10 @@ defmodule Challenge.WalletSupervisor do
   defp get_pid_from_res([]), do: []
   defp get_pid_from_res([{pid, nil}]), do: {:ok, pid}
 
-
   defp get_pid_from_registry(name, registry), do: Registry.lookup(registry, name)
 
-  defp start_child_process({_, %User{}} = child_spec), do: DynamicSupervisor.start_child(__MODULE__, child_spec)
+  defp start_child_process({_, %User{}} = child_spec),
+    do: DynamicSupervisor.start_child(__MODULE__, child_spec)
+
   defp start_child_process(_), do: :ok
 end
