@@ -41,10 +41,6 @@ defmodule Challenge.WalletWorker do
       {:error, :duplicate_transaction} ->
         response = make_error_response("RS_ERROR_DUPLICATE_TRANSACTION")
         {:reply, {:ok, response}, state}
-
-      _ ->
-        response = make_error_response("RS_ERROR_UNKNOWN")
-        {:reply, {:ok, response}, state}
     end
   end
 
@@ -66,10 +62,6 @@ defmodule Challenge.WalletWorker do
 
       {:error, :duplicate_transaction} ->
         response = make_error_response("RS_ERROR_DUPLICATE_TRANSACTION")
-        {:reply, {:ok, response}, state}
-
-      _ ->
-        response = make_error_response("RS_ERROR_UNKNOWN")
         {:reply, {:ok, response}, state}
     end
   end
