@@ -7,4 +7,5 @@ defmodule Challenge do
 
   defdelegate start, to: Operator
   defdelegate create_users(server, users), to: Operator
+  defdelegate bet(server, body), to: Operator
 end

@@ -33,4 +33,10 @@ defmodule Challenge.Operator do
 
   @spec create_users(server :: GenServer.server(), users :: [String.t()]) :: :ok
   def create_users(_server, users), do: WalletSupervisor.start_children(users)
+
+  @doc """
+  This function places bet for a user
+  """
+  @spec bet(server :: GenServer.server(), body :: map) :: map
+  def bet(server, body), do: WalletSupervisor.bet(server, body, @registry)
 end
