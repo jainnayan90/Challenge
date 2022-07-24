@@ -14,4 +14,9 @@ defmodule Challenge.Models.UserTest do
     user_id = ""
     assert {:error, :invalid_name} = User.new(%{id: user_id})
   end
+
+  test "returns error if user id length is less than 3" do
+    user_id = "aa"
+    assert {:error, :invalid_name} = User.new(%{id: user_id})
+  end
 end

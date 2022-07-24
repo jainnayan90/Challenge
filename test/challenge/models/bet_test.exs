@@ -51,8 +51,45 @@ defmodule Challenge.Models.BetTest do
            } = Bet.new(@bet)
   end
 
+  test "returns a new model if nullable params are not provided in request" do
+    bet = %{
+      user: "nayan",
+      transaction_uuid: "16d2dcfe-b89e-11e7-854a-58404eea6d16",
+      supplier_transaction_id: "41ecc3ad-b181-4235-bf9d-acf0a7ad9730",
+      token: "55b7518e-b89e-11e7-81be-58404eea6d16",
+      reward_uuid: "a28f93f2-98c5-41f7-8fbb-967985acf8fe",
+      request_uuid: "583c985f-fee6-4c0e-bbf5-308aad6265af",
+      game_code: "clt_dragonrising",
+      currency: "USD",
+      amount: 100
+    }
+
+    assert %Bet{
+             user: "nayan",
+             transaction_uuid: "16d2dcfe-b89e-11e7-854a-58404eea6d16",
+             supplier_transaction_id: "41ecc3ad-b181-4235-bf9d-acf0a7ad9730",
+             token: "55b7518e-b89e-11e7-81be-58404eea6d16",
+             supplier_user: nil,
+             round_closed: nil,
+             round: nil,
+             reward_uuid: "a28f93f2-98c5-41f7-8fbb-967985acf8fe",
+             request_uuid: "583c985f-fee6-4c0e-bbf5-308aad6265af",
+             is_free: nil,
+             is_aggregated: nil,
+             game_code: "clt_dragonrising",
+             currency: "USD",
+             bet: nil,
+             amount: 100,
+             meta: nil
+           } = Bet.new(bet)
+  end
+
   test "returns error if token is invalid" do
     assert {:error, :wrong_type} = Bet.new(%{@bet | token: ""})
+  end
+
+  test "returns error if token length is > 255" do
+    assert {:error, :wrong_type} = Bet.new(%{@bet | token: String.duplicate("a", 300)})
   end
 
   test "returns error if supplier_user is invalid" do

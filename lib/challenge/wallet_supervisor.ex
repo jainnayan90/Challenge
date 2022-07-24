@@ -56,7 +56,7 @@ defmodule Challenge.WalletSupervisor do
          {:ok, res} <- GenServer.call(pid, {:win, win}) do
       res
     else
-      {:error, :invalid_bet} ->
+      {:error, :invalid_win} ->
         %{status: "RS_ERROR_WRONG_SYNTAX"}
 
       {:error, :wrong_type} ->
