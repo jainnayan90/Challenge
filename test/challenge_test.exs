@@ -55,8 +55,8 @@ defmodule ChallengeTest do
     test "no user is created when an invalid user id is provided", %{supervisor_pid: spid} do
       user_ids = [:att, ""]
       assert :ok = Challenge.create_users(spid, user_ids)
-      assert [] = Registry.lookup(@registry, "")
-      assert [] = Registry.lookup(@registry, :att)
+      assert [] = Registry.lookup(@registry, get_user(spid, ""))
+      assert [] = Registry.lookup(@registry, get_user(spid, :att))
     end
 
     test "user is not re-initialised if we start child again", %{supervisor_pid: spid} do

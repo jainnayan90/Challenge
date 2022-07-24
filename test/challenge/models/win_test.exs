@@ -160,6 +160,10 @@ defmodule Challenge.Models.WinTest do
     assert {:error, :wrong_type} = Win.new(%{@win | amount: -10})
   end
 
+  test "returns error if amount is decimal" do
+    assert {:error, :wrong_type} = Win.new(%{@win | amount: 1.56})
+  end
+
   test "returns error if body params are missing is invalid" do
     bet = %{
       user: "nayan",

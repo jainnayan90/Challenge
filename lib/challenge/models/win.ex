@@ -156,7 +156,7 @@ defmodule Challenge.Models.Win do
          :ok <- validate_string(game_code),
          :ok <- validate_string(currency),
          :ok <- validate_nullable_string(bet),
-         :ok <- validate_decimal(amount),
+         :ok <- validate_integer(amount),
          :ok <- validate_nullable_map(meta) do
       res
     else
@@ -176,8 +176,8 @@ defmodule Challenge.Models.Win do
   defp validate_nullable_boolean(val) when is_boolean(val), do: :ok
   defp validate_nullable_boolean(_), do: {:error, :wrong_type}
 
-  defp validate_decimal(val) when is_number(val) and val > 0, do: :ok
-  defp validate_decimal(_), do: {:error, :wrong_type}
+  defp validate_integer(val) when is_integer(val) and val > 0, do: :ok
+  defp validate_integer(_), do: {:error, :wrong_type}
 
   defp validate_nullable_map(nil), do: :ok
   defp validate_nullable_map(val) when is_map(val), do: :ok
