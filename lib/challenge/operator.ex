@@ -3,7 +3,7 @@ defmodule Challenge.Operator do
   This module implements the operator actions for the games.
   """
 
-  @registry :wallet_registry
+  @registry Challenge.Registry
 
   alias Challenge.WalletSupervisor
 
@@ -14,14 +14,7 @@ defmodule Challenge.Operator do
 
   @spec start :: GenServer.server()
   def start() do
-    children = [
-      {WalletSupervisor, []},
-      {Registry, [keys: :unique, name: @registry]}
-    ]
-
-    opts = [strategy: :one_for_one, name: __MODULE__]
-
-    {:ok, pid} = Supervisor.start_link(children, opts)
+    {:ok, pid} = WalletSupervisor.start_link()
     pid
   end
 
@@ -32,7 +25,7 @@ defmodule Challenge.Operator do
   """
 
   @spec create_users(server :: GenServer.server(), users :: [String.t()]) :: :ok
-  def create_users(_server, users), do: WalletSupervisor.start_children(users)
+  def create_users(server, users), do: WalletSupervisor.start_children(server, users)
 
   @doc """
   This function places bet for a user.

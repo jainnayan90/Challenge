@@ -2,7 +2,7 @@ defmodule ChallengeTest do
   use ExUnit.Case
   doctest Challenge
 
-  @registry :wallet_registry
+  @registry Challenge.Registry
 
   @bet %{
     user: "john12345",

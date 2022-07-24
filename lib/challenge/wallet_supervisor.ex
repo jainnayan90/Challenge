@@ -10,7 +10,7 @@ defmodule Challenge.WalletSupervisor do
   alias Challenge.WalletWorker
 
   def start_link(opts \\ []) do
-    DynamicSupervisor.start_link(__MODULE__, opts, name: __MODULE__)
+    DynamicSupervisor.start_link(__MODULE__, opts)
   end
 
   @impl true
@@ -18,12 +18,12 @@ defmodule Challenge.WalletSupervisor do
     DynamicSupervisor.init(strategy: :one_for_one)
   end
 
-  @spec start_children(List.t()) :: :ok
-  def start_children(users) do
+  @spec start_children(server :: GenServer.server(), users :: List.t()) :: :ok
+  def start_children(server, users) do
     for user <- users do
       user
-      |> get_child_specs()
-      |> start_child_process()
+      |> get_child_specs(server)
+      |> start_child_process(server)
     end
 
     :ok
@@ -67,15 +67,15 @@ defmodule Challenge.WalletSupervisor do
     end
   end
 
-  defp get_child_specs(user), do: {WalletWorker, User.new(%{id: user})}
+  defp get_child_specs(user, server), do: {WalletWorker, [User.new(%{id: user}), server]}
 
   defp get_pid_from_res([]), do: []
   defp get_pid_from_res([{pid, nil}]), do: {:ok, pid}
 
   defp get_pid_from_registry(name, registry), do: Registry.lookup(registry, name)
 
-  defp start_child_process({_, %User{}} = child_spec),
-    do: DynamicSupervisor.start_child(__MODULE__, child_spec)
+  defp start_child_process({_, [%User{}, _server]} = child_spec, server),
+    do: DynamicSupervisor.start_child(server, child_spec)
 
-  defp start_child_process(_), do: :ok
+  defp start_child_process(_, _), do: :ok
 end

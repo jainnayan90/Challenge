@@ -4,21 +4,21 @@ defmodule Challenge.WalletWorker do
   """
   use GenServer
 
-  @registry :wallet_registry
+  @registry Challenge.Registry
 
-  @initial_state %{user: nil, bets: %{}, wins: %{}}
+  @initial_state %{user: nil, bets: %{}, wins: %{}, server: nil}
 
   alias Challenge.Models.Bet
   alias Challenge.Models.User
   alias Challenge.Models.Win
 
-  def start_link(%User{id: id} = opts) do
+  def start_link([%User{id: id}, _server] = opts) do
     GenServer.start_link(__MODULE__, opts, name: via_tuple(id))
   end
 
   @impl true
-  def init(%User{} = user) do
-    {:ok, %{@initial_state | user: user}}
+  def init([%User{} = user, server]) do
+    {:ok, %{@initial_state | user: user, server: server}}
   end
 
   @impl true
