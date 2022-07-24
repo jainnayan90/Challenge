@@ -30,9 +30,9 @@ defmodule Challenge.WalletSupervisor do
   end
 
   @spec bet(server :: GenServer.server(), body :: map, registry :: atom()) :: map
-  def bet(_server, body, registry) do
+  def bet(server, body, registry) do
     with %Bet{user: user} = bet <- Bet.new(body),
-         res = get_pid_from_registry(user, registry),
+         res = get_pid_from_registry("#{user}_#{inspect(server)}", registry),
          {:ok, pid} <- get_pid_from_res(res),
          {:ok, res} <- GenServer.call(pid, {:bet, bet}) do
       res
@@ -49,9 +49,9 @@ defmodule Challenge.WalletSupervisor do
   end
 
   @spec win(server :: GenServer.server(), body :: map, registry :: atom()) :: map
-  def win(_server, body, registry) do
+  def win(server, body, registry) do
     with %Win{user: user} = win <- Win.new(body),
-         res = get_pid_from_registry(user, registry),
+         res = get_pid_from_registry("#{user}_#{inspect(server)}", registry),
          {:ok, pid} <- get_pid_from_res(res),
          {:ok, res} <- GenServer.call(pid, {:win, win}) do
       res

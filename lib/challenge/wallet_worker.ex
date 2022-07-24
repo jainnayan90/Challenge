@@ -12,8 +12,9 @@ defmodule Challenge.WalletWorker do
   alias Challenge.Models.User
   alias Challenge.Models.Win
 
-  def start_link([%User{id: id}, _server] = opts) do
-    GenServer.start_link(__MODULE__, opts, name: via_tuple(id))
+  def start_link([%User{id: id}, server] = opts) do
+    registry_name = "#{id}_#{inspect(server)}"
+    GenServer.start_link(__MODULE__, opts, name: via_tuple(registry_name))
   end
 
   @impl true

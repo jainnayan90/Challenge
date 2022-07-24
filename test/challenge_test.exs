@@ -35,13 +35,20 @@ defmodule ChallengeTest do
     test "starts the supervision tree successfully.", %{supervisor_pid: spid} do
       assert is_pid(spid) == true
     end
+
+    test "starts the another supervision tree successfully.", %{supervisor_pid: spid} do
+      assert is_pid(spid) == true
+
+      npid = Challenge.start()
+      assert npid != spid
+    end
   end
 
   describe "create_users/2 - " do
     test "create a new user when a valid user id is provided", %{supervisor_pid: spid} do
       user_id = "test_user"
       assert :ok = Challenge.create_users(spid, [user_id])
-      [{pid, nil}] = Registry.lookup(@registry, user_id)
+      [{pid, nil}] = Registry.lookup(@registry, get_user(spid, user_id))
       assert is_pid(pid) == true
     end
 
@@ -55,11 +62,11 @@ defmodule ChallengeTest do
     test "user is not re-initialised if we start child again", %{supervisor_pid: spid} do
       user_id = "test_user1"
       assert :ok = Challenge.create_users(spid, [user_id])
-      [{pid, nil}] = Registry.lookup(@registry, user_id)
+      [{pid, nil}] = Registry.lookup(@registry, get_user(spid, user_id))
       assert is_pid(pid) == true
 
       assert :ok = Challenge.create_users(spid, [user_id])
-      [{^pid, nil}] = Registry.lookup(@registry, user_id)
+      [{^pid, nil}] = Registry.lookup(@registry, get_user(spid, user_id))
     end
   end
 
@@ -69,7 +76,7 @@ defmodule ChallengeTest do
     } do
       user = "nayan"
       assert :ok = Challenge.create_users(spid, [user])
-      [{pid, nil}] = Registry.lookup(@registry, user)
+      [{pid, nil}] = Registry.lookup(@registry, get_user(spid, user))
       assert is_pid(pid) == true
 
       request_uuid = "583c985f-fee6-4c0e-bbf5-308aad6265af"
@@ -85,6 +92,40 @@ defmodule ChallengeTest do
              } = Challenge.bet(spid, bet)
     end
 
+    test "does-not places bet if a different root server is provided.", %{
+      supervisor_pid: spid
+    } do
+      user = "nayandiff"
+      assert :ok = Challenge.create_users(spid, [user])
+      [{pid, nil}] = Registry.lookup(@registry, get_user(spid, user))
+      assert is_pid(pid) == true
+
+      npid = Challenge.start()
+
+      request_uuid = "583c985f-fee6-4c0e-bbf5-308aad6265af"
+
+      bet = %{@bet | user: user, request_uuid: request_uuid}
+
+      assert %{
+               user: ^user,
+               status: "RS_OK",
+               request_uuid: ^request_uuid,
+               currency: "USD",
+               balance: 99_000
+             } = Challenge.bet(spid, bet)
+
+      bet = %{
+        @bet
+        | user: user,
+          transaction_uuid: "583c985f-fee6-4c0e-bbf5-308aad6265af",
+          request_uuid: request_uuid
+      }
+
+      assert %{
+               status: "RS_ERROR_UNKNOWN"
+             } = Challenge.bet(npid, bet)
+    end
+
     test "returns error id user doesnot exists.", %{supervisor_pid: spid} do
       bet = %{@bet | user: "some user"}
 
@@ -94,7 +135,7 @@ defmodule ChallengeTest do
     test "does not places bet if transaction uuid is duplicate", %{supervisor_pid: spid} do
       user = "nayan1"
       assert :ok = Challenge.create_users(spid, [user])
-      [{pid, nil}] = Registry.lookup(@registry, user)
+      [{pid, nil}] = Registry.lookup(@registry, get_user(spid, user))
       assert is_pid(pid) == true
 
       bet = %{@bet | user: user, amount: 3000}
@@ -115,7 +156,7 @@ defmodule ChallengeTest do
     test "does not places bet if bet amount is negative", %{supervisor_pid: spid} do
       user = "nayan2"
       assert :ok = Challenge.create_users(spid, [user])
-      [{pid, nil}] = Registry.lookup(@registry, user)
+      [{pid, nil}] = Registry.lookup(@registry, get_user(spid, user))
       assert is_pid(pid) == true
 
       bet = %{@bet | user: user, amount: -200}
@@ -128,7 +169,7 @@ defmodule ChallengeTest do
     test "does not places bet if bet amount is invalid", %{supervisor_pid: spid} do
       user = "nayan3"
       assert :ok = Challenge.create_users(spid, [user])
-      [{pid, nil}] = Registry.lookup(@registry, user)
+      [{pid, nil}] = Registry.lookup(@registry, get_user(spid, user))
       assert is_pid(pid) == true
 
       bet = %{@bet | user: user, amount: 200_000}
@@ -141,7 +182,7 @@ defmodule ChallengeTest do
     test "does not places bet if currency code is not USD", %{supervisor_pid: spid} do
       user = "nayan4"
       assert :ok = Challenge.create_users(spid, [user])
-      [{pid, nil}] = Registry.lookup(@registry, user)
+      [{pid, nil}] = Registry.lookup(@registry, get_user(spid, user))
       assert is_pid(pid) == true
 
       bet = %{@bet | user: user, amount: 122, currency: "INR"}
@@ -154,7 +195,7 @@ defmodule ChallengeTest do
     test "does not places bet if game code is invalid", %{supervisor_pid: spid} do
       user = "nayan5"
       assert :ok = Challenge.create_users(spid, [user])
-      [{pid, nil}] = Registry.lookup(@registry, user)
+      [{pid, nil}] = Registry.lookup(@registry, get_user(spid, user))
       assert is_pid(pid) == true
 
       bet = %{@bet | user: user, amount: 122, game_code: ""}
@@ -167,7 +208,7 @@ defmodule ChallengeTest do
     test "returns error when payload is incorrect.", %{supervisor_pid: spid} do
       user = "nayan5"
       assert :ok = Challenge.create_users(spid, [user])
-      [{pid, nil}] = Registry.lookup(@registry, user)
+      [{pid, nil}] = Registry.lookup(@registry, get_user(spid, user))
       assert is_pid(pid) == true
 
       bet = %{
@@ -219,7 +260,7 @@ defmodule ChallengeTest do
     } do
       user = "nayanwin1"
       assert :ok = Challenge.create_users(spid, [user])
-      [{pid, nil}] = Registry.lookup(@registry, user)
+      [{pid, nil}] = Registry.lookup(@registry, get_user(spid, user))
       assert is_pid(pid) == true
 
       request_uuid = "583c985f-fee6-4c0e-bbf5-308aad6265af"
@@ -263,7 +304,7 @@ defmodule ChallengeTest do
     test "returns error id user doesnot exists.", %{supervisor_pid: spid} do
       user = "nayanwin2"
       assert :ok = Challenge.create_users(spid, [user])
-      [{pid, nil}] = Registry.lookup(@registry, user)
+      [{pid, nil}] = Registry.lookup(@registry, get_user(spid, user))
       assert is_pid(pid) == true
 
       request_uuid = "583c985f-fee6-4c0e-bbf5-308aad6265af"
@@ -286,7 +327,7 @@ defmodule ChallengeTest do
     test "does not process win request twice.", %{supervisor_pid: spid} do
       user = "nayanwin3"
       assert :ok = Challenge.create_users(spid, [user])
-      [{pid, nil}] = Registry.lookup(@registry, user)
+      [{pid, nil}] = Registry.lookup(@registry, get_user(spid, user))
       assert is_pid(pid) == true
 
       request_uuid = "583c985f-fee6-4c0e-bbf5-308aad6265af"
@@ -319,7 +360,7 @@ defmodule ChallengeTest do
     test "returns error if reference_transaction_uuid is invalid.", %{supervisor_pid: spid} do
       user = "nayanwin4"
       assert :ok = Challenge.create_users(spid, [user])
-      [{pid, nil}] = Registry.lookup(@registry, user)
+      [{pid, nil}] = Registry.lookup(@registry, get_user(spid, user))
       assert is_pid(pid) == true
 
       request_uuid = "583c985f-fee6-4c0e-bbf5-308aad6265af"
@@ -350,7 +391,7 @@ defmodule ChallengeTest do
     test "does not process win if win amount is negative", %{supervisor_pid: spid} do
       user = "nayanwin5"
       assert :ok = Challenge.create_users(spid, [user])
-      [{pid, nil}] = Registry.lookup(@registry, user)
+      [{pid, nil}] = Registry.lookup(@registry, get_user(spid, user))
       assert is_pid(pid) == true
 
       request_uuid = "583c985f-fee6-4c0e-bbf5-308aad6265af"
@@ -375,7 +416,7 @@ defmodule ChallengeTest do
     test "does not process win if currency code is not USD", %{supervisor_pid: spid} do
       user = "nayanwin6"
       assert :ok = Challenge.create_users(spid, [user])
-      [{pid, nil}] = Registry.lookup(@registry, user)
+      [{pid, nil}] = Registry.lookup(@registry, get_user(spid, user))
       assert is_pid(pid) == true
 
       request_uuid = "583c985f-fee6-4c0e-bbf5-308aad6265af"
@@ -400,7 +441,7 @@ defmodule ChallengeTest do
     test "returns error when payload is incorrect.", %{supervisor_pid: spid} do
       user = "nayanwin7"
       assert :ok = Challenge.create_users(spid, [user])
-      [{pid, nil}] = Registry.lookup(@registry, user)
+      [{pid, nil}] = Registry.lookup(@registry, get_user(spid, user))
       assert is_pid(pid) == true
 
       request_uuid = "583c985f-fee6-4c0e-bbf5-308aad6265af"
@@ -421,5 +462,35 @@ defmodule ChallengeTest do
                status: "RS_ERROR_WRONG_SYNTAX"
              } = Challenge.win(spid, win)
     end
+
+    test "does not process win if places at a different root server.", %{
+      supervisor_pid: spid
+    } do
+      user = "nayanwin8"
+      assert :ok = Challenge.create_users(spid, [user])
+      [{pid, nil}] = Registry.lookup(@registry, get_user(spid, user))
+      assert is_pid(pid) == true
+
+      request_uuid = "583c985f-fee6-4c0e-bbf5-308aad6265af"
+
+      bet = %{@bet | user: user, request_uuid: request_uuid}
+
+      assert %{
+               user: ^user,
+               status: "RS_OK",
+               request_uuid: ^request_uuid,
+               currency: "USD",
+               balance: 99_000
+             } = Challenge.bet(spid, bet)
+
+      npid = Challenge.start()
+      win = %{@win | user: user, request_uuid: request_uuid, amount: 1500}
+
+      assert %{
+               status: "RS_ERROR_UNKNOWN"
+             } = Challenge.win(npid, win)
+    end
   end
+
+  defp get_user(pid, user), do: "#{user}_#{inspect(pid)}"
 end
