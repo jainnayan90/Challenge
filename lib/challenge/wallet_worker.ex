@@ -68,7 +68,7 @@ defmodule Challenge.WalletWorker do
   end
 
   defp check_bet_amount(%Bet{amount: bet_amount}, %{user: %User{amount: amount}})
-       when bet_amount < amount,
+       when bet_amount <= amount,
        do: :ok
 
   defp check_bet_amount(_, _), do: {:error, :insufficient_funds}
